@@ -1,4 +1,4 @@
-# Character Guildelines
+# Character Guidelines
 
 With this extension you can set and view in advance the maximum number of characters allowed for a given context, useful with WebSite forms that have annoying limits on the number of characters you can type on them.
 

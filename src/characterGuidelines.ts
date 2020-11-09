@@ -1,8 +1,12 @@
+import { title } from 'process';
+import { TextDecoder } from 'util';
 import * as vscode from 'vscode';
 import { Constants } from './constants';
+import { PaddingFillerItem } from './PaddingFillerItem';
 import { StatusBar } from './statusbarProxy';
 
 export class CharacterGuidelines {
+
     public NewLineCount: number = 2;
     private rowLimit: number = 1;
     private charLimit: number = -1;
@@ -15,6 +19,15 @@ export class CharacterGuidelines {
 
     private cumulativeValidRanges = new Array<vscode.DecorationOptions>();
     private cumulativeInvalidRanges = new Array<vscode.Range>();
+
+    private _items = [
+        new PaddingFillerItem("***", 1),
+        new PaddingFillerItem("    ", 2),
+        new PaddingFillerItem("___", 3),
+        new PaddingFillerItem("---", 4),
+        new PaddingFillerItem("abc", 5),
+        new PaddingFillerItem("123", 6)
+    ];
 
     constructor() {
         this.ReloadDecorators();
@@ -263,5 +276,101 @@ export class CharacterGuidelines {
             this.NewLineCount = numVal;
             return this.ReloadData();
         });
+    }
+
+
+    public async FillPaddingWith() {
+        const self = this;
+        const textEditor = vscode.window.activeTextEditor;
+        if (!textEditor)
+            return;
+        const quickPick = vscode.window.createQuickPick();
+        quickPick.title = "Fill the remaining padding with";
+        quickPick.items = [
+            ...self._items,
+            new PaddingFillerItem("or just type something", 7)
+        ];
+        quickPick.onDidAccept((rawTarget) => {
+            const target = (quickPick.selectedItems[0]) as PaddingFillerItem;
+            const itemList = quickPick.items;
+            const itemListCount = itemList.length;
+            for (let i = 0; i < itemListCount; i++) {
+                const item = itemList[i] as PaddingFillerItem;
+                if (item.id != target.id)
+                    continue;
+                let sequence = item.label;
+                if (item.id == 5) {
+                    sequence = 'abcdefghijklmnopqrstuvwxyz';
+                } else if (item.id == 6) {
+                    sequence = '1234567890';
+                }
+                const sequenceEnd = sequence.length;
+                let sequenceIndex = 0;
+                let resultingText = textEditor.document.getText();
+                if (self.rowLimit == 1) {
+                    if (self.charLimit >= sequenceEnd) {
+                        const charLimit = self.charLimit - resultingText.length;
+                        const times = (charLimit / sequenceEnd);
+                        const plus = (charLimit % sequenceEnd);
+                        if (times > 0)
+                            resultingText += sequence.repeat(times);
+                        for (let charIndex = 0; charIndex < plus; charIndex++) {
+                            resultingText += sequence[sequenceIndex];
+                            if (sequenceIndex++ < sequenceEnd)
+                                sequenceIndex = 0;
+                        }
+                    }
+                    else {
+                        while (resultingText.length < self.charLimit) {
+                            resultingText += sequence[sequenceIndex];
+                            if (sequenceIndex++ < sequenceEnd)
+                                sequenceIndex = 0;
+                        }
+                    }
+                }
+                else {
+                    resultingText = '';
+                    const doc = textEditor.document;
+                    for (let row = 0; row < doc.lineCount; row++) {
+                        let line = doc.lineAt(row).text;
+                        if (self.charLimit >= sequenceEnd) {
+
+                            const charLimit = self.charLimit - line.length;
+                            const times = (charLimit / sequenceEnd);
+                            const plus = (charLimit % sequenceEnd);
+                            if (times > 0)
+                                line += sequence.repeat(times);
+                            for (let charIndex = 0; charIndex < plus; charIndex++) {
+                                line += sequence[sequenceIndex];
+                                if (sequenceIndex++ < sequenceEnd)
+                                    sequenceIndex = 0;
+                            }
+                        }
+                        else {
+                            while (line.length < self.charLimit) {
+                                line += sequence[sequenceIndex];
+                                if (sequenceIndex++ < sequenceEnd)
+                                    sequenceIndex = 0;
+                            }
+                        }
+                        resultingText += line + textEditor.document.eol;
+                    }
+                }
+
+                textEditor.edit((builder) => {
+                    const startPosition = new vscode.Position(0, 0);
+                    const endPosition = textEditor.document.positionAt(textEditor.document.getText().length);
+                    builder.delete(new vscode.Range(startPosition, endPosition));
+                    builder.insert(startPosition, resultingText);
+                }).then((r) => {
+                    quickPick.hide();
+                });
+                break;
+            }
+        });
+        quickPick.onDidChangeValue((e) => {
+            quickPick.items = [...self._items, new PaddingFillerItem(e, 7)]
+        });
+        quickPick.show();
     }
 }

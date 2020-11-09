@@ -33,6 +33,9 @@ export function activate(context: vscode.ExtensionContext) {
 			await guidelines.ChangeNewLineCountValue();
 			StatusBar.Update();
 		}),
+		vscode.commands.registerCommand(Constants.FillPaddingWithCommand, async () => {
+			guidelines.FillPaddingWith();
+		}),
 		vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
 			if (!e.affectsConfiguration(Constants.ExtensionName)) {
 				return;

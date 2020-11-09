@@ -3,7 +3,7 @@
 	"displayName": "Character GuideLines",
 	"description": "Known your limits",
 	"publisher": "VolcanicBytes",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"repository": {
 		"url": "https://github.com/VolcanicBytes/characterGuidelines",
 		"type": "git"
@@ -45,6 +45,11 @@
 				"command": "character-guidelines.change-new-line-count-value",
 				"title": "Change New Line Count Value",
 				"category": "Character Guidelines"
+			},
+			{
+				"command": "character-guidelines.fill-padding-with",
+				"title": "Fill Padding With",
+				"category": "Character Guidelines"
 			}
 		],
 		"menus": {
@@ -55,6 +60,10 @@
 				},
 				{
 					"command": "character-guidelines.change-new-line-count-value",
+					"when": "CharacterGuidelinesActive"
+				},
+				{
+					"command": "character-guidelines.fill-padding-with",
 					"when": "CharacterGuidelinesActive"
 				}
 			]
